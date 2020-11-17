@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:markets/src/models/user.dart';
+import 'package:markets/src/repository/user_repository.dart';
+import 'package:mpesa/mpesa.dart';
 import 'package:mvc_pattern/mvc_pattern.dart';
 
 import '../../generated/l10n.dart';
@@ -27,6 +30,25 @@ class _OrderSuccessWidgetState extends StateMVC<OrderSuccessWidget> {
   @override
   void initState() {
     // route param contains the payment method
+    var mpesa = Mpesa(
+      clientKey: "O2AAPhv5r28JNYmA65jkVw3npSDLofHF",
+      clientSecret: "u6HJAwQf8CpPhk0Y",
+      passKey: "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919",
+      initiatorPassword: "Akron254",
+      environment: "sandbox",
+    );
+    mpesa
+        .lipaNaMpesa(
+      phoneNumber: currentUser.value.phone,
+      amount: _con.total,
+      businessShortCode: "174379",
+      callbackUrl: "",
+    )
+        .then((result) {
+
+    })
+        .catchError((error) {});
+    
     _con.payment = new Payment(widget.routeArgument.param);
     _con.listenForCarts();
     super.initState();
