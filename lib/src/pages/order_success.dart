@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:markets/src/models/user.dart';
 import 'package:markets/src/repository/user_repository.dart';
@@ -11,6 +12,8 @@ import '../helpers/helper.dart';
 import '../models/payment.dart';
 import '../models/route_argument.dart';
 
+bool not_payed = true;
+
 class OrderSuccessWidget extends StatefulWidget {
   final RouteArgument routeArgument;
 
@@ -22,6 +25,7 @@ class OrderSuccessWidget extends StatefulWidget {
 
 class _OrderSuccessWidgetState extends StateMVC<OrderSuccessWidget> {
   CheckoutController _con;
+  String paymentStatusText;
 
   _OrderSuccessWidgetState() : super(CheckoutController()) {
     _con = controller;
@@ -30,25 +34,7 @@ class _OrderSuccessWidgetState extends StateMVC<OrderSuccessWidget> {
   @override
   void initState() {
     // route param contains the payment method
-    var mpesa = Mpesa(
-      clientKey: "O2AAPhv5r28JNYmA65jkVw3npSDLofHF",
-      clientSecret: "u6HJAwQf8CpPhk0Y",
-      passKey: "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919",
-      initiatorPassword: "Akron254",
-      environment: "sandbox",
-    );
-    mpesa
-        .lipaNaMpesa(
-      phoneNumber: currentUser.value.phone,
-      amount: _con.total,
-      businessShortCode: "174379",
-      callbackUrl: "",
-    )
-        .then((result) {
-
-    })
-        .catchError((error) {});
-    
+    makeRequest(_con.total);
     _con.payment = new Payment(widget.routeArgument.param);
     _con.listenForCarts();
     super.initState();
@@ -72,7 +58,10 @@ class _OrderSuccessWidgetState extends StateMVC<OrderSuccessWidget> {
           centerTitle: true,
           title: Text(
             S.of(context).confirmation,
-            style: Theme.of(context).textTheme.headline6.merge(TextStyle(letterSpacing: 1.3)),
+            style: Theme.of(context)
+                .textTheme
+                .headline6
+                .merge(TextStyle(letterSpacing: 1.3)),
           ),
         ),
         body: _con.carts.isEmpty
@@ -94,20 +83,27 @@ class _OrderSuccessWidgetState extends StateMVC<OrderSuccessWidget> {
                               height: 150,
                               decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  gradient: LinearGradient(begin: Alignment.bottomLeft, end: Alignment.topRight, colors: [
-                                    Colors.green.withOpacity(1),
-                                    Colors.green.withOpacity(0.2),
-                                  ])),
-                              child: _con.loading
+                                  gradient: LinearGradient(
+                                      begin: Alignment.bottomLeft,
+                                      end: Alignment.topRight,
+                                      colors: [
+                                        Colors.green.withOpacity(1),
+                                        Colors.green.withOpacity(0.2),
+                                      ])),
+                              child: not_payed
                                   ? Padding(
                                       padding: EdgeInsets.all(55),
                                       child: CircularProgressIndicator(
-                                        valueColor: new AlwaysStoppedAnimation<Color>(Theme.of(context).scaffoldBackgroundColor),
+                                        valueColor:
+                                            new AlwaysStoppedAnimation<Color>(
+                                                Theme.of(context)
+                                                    .scaffoldBackgroundColor),
                                       ),
                                     )
                                   : Icon(
                                       Icons.check,
-                                      color: Theme.of(context).scaffoldBackgroundColor,
+                                      color: Theme.of(context)
+                                          .scaffoldBackgroundColor,
                                       size: 90,
                                     ),
                             ),
@@ -118,7 +114,9 @@ class _OrderSuccessWidgetState extends StateMVC<OrderSuccessWidget> {
                                 width: 100,
                                 height: 100,
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.15),
+                                  color: Theme.of(context)
+                                      .scaffoldBackgroundColor
+                                      .withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(150),
                                 ),
                               ),
@@ -130,7 +128,9 @@ class _OrderSuccessWidgetState extends StateMVC<OrderSuccessWidget> {
                                 width: 120,
                                 height: 120,
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.15),
+                                  color: Theme.of(context)
+                                      .scaffoldBackgroundColor
+                                      .withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(150),
                                 ),
                               ),
@@ -140,11 +140,25 @@ class _OrderSuccessWidgetState extends StateMVC<OrderSuccessWidget> {
                         SizedBox(height: 15),
                         Opacity(
                           opacity: 0.4,
-                          child: Text(
-                            S.of(context).your_order_has_been_successfully_submitted,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.headline3.merge(TextStyle(fontWeight: FontWeight.w300)),
-                          ),
+                          child: not_payed
+                              ? Text(
+                                  "Payment being processed. Please do not close this page.",
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headline3
+                                      .merge(TextStyle(
+                                          fontWeight: FontWeight.w300)),
+                                )
+                              : Text(
+                                  "Your payment has been successfully submitted",
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headline3
+                                      .merge(TextStyle(
+                                          fontWeight: FontWeight.w300)),
+                                ),
                         ),
                       ],
                     ),
@@ -153,11 +167,21 @@ class _OrderSuccessWidgetState extends StateMVC<OrderSuccessWidget> {
                     bottom: 0,
                     child: Container(
                       height: 255,
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                       decoration: BoxDecoration(
                           color: Theme.of(context).primaryColor,
-                          borderRadius: BorderRadius.only(topRight: Radius.circular(20), topLeft: Radius.circular(20)),
-                          boxShadow: [BoxShadow(color: Theme.of(context).focusColor.withOpacity(0.15), offset: Offset(0, -2), blurRadius: 5.0)]),
+                          borderRadius: BorderRadius.only(
+                              topRight: Radius.circular(20),
+                              topLeft: Radius.circular(20)),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Theme.of(context)
+                                    .focusColor
+                                    .withOpacity(0.15),
+                                offset: Offset(0, -2),
+                                blurRadius: 5.0)
+                          ]),
                       child: SizedBox(
                         width: MediaQuery.of(context).size.width - 40,
                         child: Column(
@@ -169,10 +193,13 @@ class _OrderSuccessWidgetState extends StateMVC<OrderSuccessWidget> {
                                 Expanded(
                                   child: Text(
                                     S.of(context).subtotal,
-                                    style: Theme.of(context).textTheme.bodyText1,
+                                    style:
+                                        Theme.of(context).textTheme.bodyText1,
                                   ),
                                 ),
-                                Helper.getPrice(_con.subTotal, context, style: Theme.of(context).textTheme.subtitle1)
+                                Helper.getPrice(_con.subTotal, context,
+                                    style:
+                                        Theme.of(context).textTheme.subtitle1)
                               ],
                             ),
                             SizedBox(height: 3),
@@ -183,10 +210,18 @@ class _OrderSuccessWidgetState extends StateMVC<OrderSuccessWidget> {
                                       Expanded(
                                         child: Text(
                                           S.of(context).delivery_fee,
-                                          style: Theme.of(context).textTheme.bodyText1,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyText1,
                                         ),
                                       ),
-                                      Helper.getPrice(_con.carts[0].product.market.deliveryFee, context, style: Theme.of(context).textTheme.subtitle1)
+                                      Helper.getPrice(
+                                          _con.carts[0].product.market
+                                              .deliveryFee,
+                                          context,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .subtitle1)
                                     ],
                                   ),
                             SizedBox(height: 3),
@@ -195,10 +230,13 @@ class _OrderSuccessWidgetState extends StateMVC<OrderSuccessWidget> {
                                 Expanded(
                                   child: Text(
                                     "${S.of(context).tax} (${_con.carts[0].product.market.defaultTax}%)",
-                                    style: Theme.of(context).textTheme.bodyText1,
+                                    style:
+                                        Theme.of(context).textTheme.bodyText1,
                                   ),
                                 ),
-                                Helper.getPrice(_con.taxAmount, context, style: Theme.of(context).textTheme.subtitle1)
+                                Helper.getPrice(_con.taxAmount, context,
+                                    style:
+                                        Theme.of(context).textTheme.subtitle1)
                               ],
                             ),
                             Divider(height: 30),
@@ -207,10 +245,13 @@ class _OrderSuccessWidgetState extends StateMVC<OrderSuccessWidget> {
                                 Expanded(
                                   child: Text(
                                     S.of(context).total,
-                                    style: Theme.of(context).textTheme.headline6,
+                                    style:
+                                        Theme.of(context).textTheme.headline6,
                                   ),
                                 ),
-                                Helper.getPrice(_con.total, context, style: Theme.of(context).textTheme.headline6)
+                                Helper.getPrice(_con.total, context,
+                                    style:
+                                        Theme.of(context).textTheme.headline6)
                               ],
                             ),
                             SizedBox(height: 20),
@@ -218,7 +259,8 @@ class _OrderSuccessWidgetState extends StateMVC<OrderSuccessWidget> {
                               width: MediaQuery.of(context).size.width - 40,
                               child: FlatButton(
                                 onPressed: () {
-                                  Navigator.of(context).pushNamed('/Pages', arguments: 3);
+                                  Navigator.of(context)
+                                      .pushNamed('/Pages', arguments: 3);
                                 },
                                 padding: EdgeInsets.symmetric(vertical: 14),
                                 color: Theme.of(context).accentColor,
@@ -226,7 +268,8 @@ class _OrderSuccessWidgetState extends StateMVC<OrderSuccessWidget> {
                                 child: Text(
                                   S.of(context).my_orders,
                                   textAlign: TextAlign.start,
-                                  style: TextStyle(color: Theme.of(context).primaryColor),
+                                  style: TextStyle(
+                                      color: Theme.of(context).primaryColor),
                                 ),
                               ),
                             ),
@@ -238,5 +281,25 @@ class _OrderSuccessWidgetState extends StateMVC<OrderSuccessWidget> {
                   )
                 ],
               ));
+  }
+}
+
+makeRequest(var total_pay) async {
+  var dio = Dio();
+  var userPhone;
+  if (currentUser.value.phone.contains("+")) {
+    userPhone = currentUser.value.phone.substring(1);
+  } else {
+    userPhone = currentUser.value.phone;
+  }
+  FormData formData = FormData.fromMap({
+    "phone": userPhone,
+    "amount": total_pay,
+  });
+  var response =
+      await dio.post("http://heriplex.com/sumpay/paytest.php", data: formData);
+  print('Response status: ${response.statusCode}');
+  if (response == 200) {
+    not_payed = false;
   }
 }
